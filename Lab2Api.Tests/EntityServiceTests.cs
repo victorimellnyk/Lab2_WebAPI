@@ -383,4 +383,28 @@ Assert.Single(result.Items);
 Assert.Equal("Apple", result.Items[0].Name);
 Assert.Equal(1, result.TotalCount);
 }
+[Theory]
+[InlineData(0, 10, 1, 10)]
+[InlineData(-1, 10, 1, 10)]
+[InlineData(1, 0, 1, 10)]
+[InlineData(1, -5, 1, 10)]
+[InlineData(1, 150, 1, 100)]
+public async Task GetAllAsync_InvalidPagination_NormalizesParameters(
+int page,
+int pageSize,
+int expectedPage,
+int expectedPageSize)
+{
+// Arrange
+var service = new EntityService();
+
+// Act
+var result = await service.GetAllAsync(
+    page: page,
+    pageSize: pageSize);
+
+// Assert
+Assert.Equal(expectedPage, result.CurrentPage);
+Assert.Equal(expectedPageSize, result.PageSize);
+}
 }
