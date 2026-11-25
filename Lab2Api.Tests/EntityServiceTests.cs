@@ -1,6 +1,7 @@
 using Lab2Api.DTOs;
 using Lab2Api.Services;
 using Xunit;
+using Lab2Api.Models;
 
 namespace Lab2Api.Tests;
 
@@ -340,5 +341,115 @@ var updateDto = new UpdateEntityDto
 await Assert.ThrowsAsync<ArgumentException>(
     async () => await service.UpdateAsync(
         created.Id, updateDto));
+}
+[Fact]
+public async Task GetAllAsync_SearchWithSpacesAndMixedCase_ReturnsMatchingRecords()
+{
+// Arrange
+var service = new EntityService();
+
+var field = typeof(EntityService).GetField(
+    "_entities",
+    System.Reflection.BindingFlags.NonPublic |
+    System.Reflection.BindingFlags.Instance);
+
+Assert.NotNull(field);
+
+var entities = Assert.IsType<List<Entity>>(
+    field.GetValue(service));
+
+entities.Add(new Entity
+{
+    Id = 1,
+    Name = "Apple",
+    Description = "Fruit"
+});
+
+entities.Add(new Entity
+{
+    Id = 2,
+    Name = "Banana",
+    Description = "Fruit"
+});
+
+// Act
+var result = await service.GetAllAsync(
+    page: 1,
+    pageSize: 10,
+    search: "  APPLE  ");
+
+// Assert
+Assert.Single(result.Items);
+Assert.Equal("Apple", result.Items[0].Name);
+Assert.Equal(1, result.TotalCount);
+}
+[Theory]
+[InlineData(0, 10, 1, 10)]
+[InlineData(-1, 10, 1, 10)]
+[InlineData(1, 0, 1, 10)]
+[InlineData(1, -5, 1, 10)]
+[InlineData(1, 150, 1, 100)]
+public async Task GetAllAsync_InvalidPagination_NormalizesParameters(
+int page,
+int pageSize,
+int expectedPage,
+int expectedPageSize)
+{
+// Arrange
+var service = new EntityService();
+
+// Act
+var result = await service.GetAllAsync(
+    page: page,
+    pageSize: pageSize);
+
+// Assert
+Assert.Equal(expectedPage, result.CurrentPage);
+Assert.Equal(expectedPageSize, result.PageSize);
+}
+[Fact]
+public async Task GetAllAsync_Pagination_ReturnsRecordsOrderedById()
+{
+// Arrange
+var service = new EntityService();
+
+var field = typeof(EntityService).GetField(
+    "_entities",
+    System.Reflection.BindingFlags.NonPublic |
+    System.Reflection.BindingFlags.Instance);
+
+Assert.NotNull(field);
+
+var entities = Assert.IsType<List<Entity>>(
+    field.GetValue(service));
+
+entities.Add(new Entity
+{
+    Id = 3,
+    Name = "Third"
+});
+
+entities.Add(new Entity
+{
+    Id = 1,
+    Name = "First"
+});
+
+entities.Add(new Entity
+{
+    Id = 2,
+    Name = "Second"
+});
+
+// Act
+var result = await service.GetAllAsync(
+    page: 1,
+    pageSize: 2);
+
+// Assert
+Assert.Equal(2, result.Items.Count);
+Assert.Equal(1, result.Items[0].Id);
+Assert.Equal(2, result.Items[1].Id);
+Assert.Equal(3, result.TotalCount);
 }
 }
