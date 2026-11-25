@@ -54,14 +54,7 @@ int page = 1,
 int pageSize = 10,
 string? search = null)
 {
-if (page < 1)
-page = 1;
-
-if (pageSize < 1)
-    pageSize = 10;
-
-if (pageSize > 100)
-    pageSize = 100;
+(page, pageSize) = NormalizePagination(page, pageSize);
 
 IQueryable<Entity> query = _context != null
     ? _context.Entities.AsNoTracking()
@@ -144,5 +137,17 @@ if (_context != null)
 }
 
 return result;
+}
+private static (int Page, int PageSize) NormalizePagination(
+int page, int pageSize)
+{
+page = Math.Max(1, page);
+
+if (pageSize < 1)
+    pageSize = 10;
+
+pageSize = Math.Min(pageSize, 100);
+
+return (page, pageSize);
 }
 }
