@@ -407,4 +407,49 @@ var result = await service.GetAllAsync(
 Assert.Equal(expectedPage, result.CurrentPage);
 Assert.Equal(expectedPageSize, result.PageSize);
 }
+[Fact]
+public async Task GetAllAsync_Pagination_ReturnsRecordsOrderedById()
+{
+// Arrange
+var service = new EntityService();
+
+var field = typeof(EntityService).GetField(
+    "_entities",
+    System.Reflection.BindingFlags.NonPublic |
+    System.Reflection.BindingFlags.Instance);
+
+Assert.NotNull(field);
+
+var entities = Assert.IsType<List<Entity>>(
+    field.GetValue(service));
+
+entities.Add(new Entity
+{
+    Id = 3,
+    Name = "Third"
+});
+
+entities.Add(new Entity
+{
+    Id = 1,
+    Name = "First"
+});
+
+entities.Add(new Entity
+{
+    Id = 2,
+    Name = "Second"
+});
+
+// Act
+var result = await service.GetAllAsync(
+    page: 1,
+    pageSize: 2);
+
+// Assert
+Assert.Equal(2, result.Items.Count);
+Assert.Equal(1, result.Items[0].Id);
+Assert.Equal(2, result.Items[1].Id);
+Assert.Equal(3, result.TotalCount);
+}
 }
