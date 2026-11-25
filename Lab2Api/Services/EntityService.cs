@@ -83,6 +83,7 @@ int totalPages = (int)Math.Ceiling(
     (double)totalCount / pageSize);
 
 var items = query
+    .OrderBy(e => e.Id)
     .Skip((page - 1) * pageSize)
     .Take(pageSize)
     .Select(e => e.ToResponseDto())
